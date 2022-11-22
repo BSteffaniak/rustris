@@ -58,18 +58,11 @@ fn setup(
     commands.spawn(Camera2dBundle::default());
 
     commands.spawn((
-        SpriteBundle {
-            transform: Transform {
-                translation: Vec3::new(0., 0., 0.),
-                scale: Vec3::new(500., 35., 0.),
-                ..default()
-            },
-            sprite: Sprite {
-                color: TETROMINO_COLOR,
-                ..default()
-            },
-            ..default()
-        },
+        new_component(
+            Vec3::new(0., 0., 0.),
+            Vec3::new(500., 35., 0.),
+            Color::rgb(0.2, 0.2, 0.9),
+        ),
         Wall,
     ));
 
@@ -89,6 +82,25 @@ fn setup(
         Tetromino,
         Velocity(INITIAL_BALL_DIRECTION.normalize() * 20.),
     ));
+}
+
+fn new_component(
+    translation: Vec3,
+    scale: Vec3,
+    color: Color,
+) -> SpriteBundle {
+    SpriteBundle {
+        transform: Transform {
+            translation,
+            scale,
+            ..default()
+        },
+        sprite: Sprite {
+            color,
+            ..default()
+        },
+        ..default()
+    }
 }
 
 fn window_resize_system(mut windows: ResMut<Windows>) {
