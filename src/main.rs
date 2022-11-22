@@ -16,10 +16,12 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_startup_system(setup)
         .add_startup_system(window_resize_system)
-        .insert_resource(Tick(0))
-        .insert_resource(KeyDebounce(false))
-        .insert_resource(GravityDebounce(false))
-        .insert_resource(PendingInertia(0.))
+        .insert_resource(GameState {
+            tick: 0,
+            pending_inertia: 0.,
+            key_debounce: false,
+            gravity_debounce: false,
+        })
         .add_system_set(
             SystemSet::new()
                 .with_run_criteria(FixedTimestep::step(TIME_STEP as f64))
@@ -32,16 +34,12 @@ fn main() {
 }
 
 #[derive(Resource)]
-struct Tick(u64);
-
-#[derive(Resource)]
-struct PendingInertia(f32);
-
-#[derive(Resource)]
-struct KeyDebounce(bool);
-
-#[derive(Resource)]
-struct GravityDebounce(bool);
+struct GameState {
+    tick: u64,
+    pending_inertia: f32,
+    key_debounce: bool,
+    gravity_debounce: bool,
+}
 
 #[derive(Component, Deref, DerefMut)]
 struct Velocity(Vec2);
@@ -101,36 +99,33 @@ fn window_resize_system(mut windows: ResMut<Windows>) {
 
 fn ticker(
     mut query: Query<&mut Transform, With<Tetromino>>,
-    mut tick: ResMut<Tick>,
-    mut key_debounce: ResMut<KeyDebounce>,
-    mut gravity_debounce: ResMut<GravityDebounce>,
-    mut pending_inertia: ResMut<PendingInertia>,
+    mut state: ResMut<GameState>,
 ) {
-    tick.0 = (tick.0 + 1) % 1_000_000;
+    state.tick = (state.tick + 1) % 1_000_000;
 
-    if tick.0 % 30 == 0 {
-        key_debounce.0 = false;
+    if state.tick % 30 == 0 {
+        state.key_debounce = false;
 
-        if pending_inertia.0 != 0. {
+        if state.pending_inertia != 0. {
             let mut tetromino_transform = query.single_mut();
-            let new_tetromino_position = tetromino_transform.translation.x + pending_inertia.0;
+            let new_tetromino_position = tetromino_transform.translation.x + state.pending_inertia;
             tetromino_transform.translation.x = new_tetromino_position.clamp(LEFT_BOUND, RIGHT_BOUND);
 
-            pending_inertia.0 = 0.;
+            state.pending_inertia = 0.;
         }
     }
-    if tick.0 % 60 == 0 {
-        gravity_debounce.0 = false;
+    if state.tick % 60 == 0 {
+        state.gravity_debounce = false;
     } else {
-        gravity_debounce.0 = true;
+        state.gravity_debounce = true;
     }
 }
 
 fn apply_velocity(
     mut query: Query<(&mut Transform, &Velocity)>,
-    gravity_debounce: Res<GravityDebounce>,
+    state: Res<GameState>,
 ) {
-    if gravity_debounce.0 { return; }
+    if state.gravity_debounce { return; }
     
     for (mut transform, velocity) in &mut query {
         transform.translation.x += velocity.x;
@@ -141,8 +136,7 @@ fn apply_velocity(
 fn move_tetromino(
     keyboard_input: Res<Input<KeyCode>>,
     mut query: Query<&mut Transform, With<Tetromino>>,
-    mut key_debounce: ResMut<KeyDebounce>,
-    mut pending_inertia: ResMut<PendingInertia>,
+    mut state: ResMut<GameState>,
 ) {
     let mut tetromino_transform = query.single_mut();
     let mut direction = 0.0;
@@ -155,8 +149,8 @@ fn move_tetromino(
         direction += 20.0;
     }
 
-    if direction != 0. && key_debounce.0 {
-        pending_inertia.0 = direction;
+    if direction != 0. && state.key_debounce {
+        state.pending_inertia = direction;
         return;
     }
 
@@ -165,5 +159,5 @@ fn move_tetromino(
 
     tetromino_transform.translation.x = new_tetromino_position.clamp(LEFT_BOUND, RIGHT_BOUND);
 
-    key_debounce.0 = true;
+    state.key_debounce = true;
 }
