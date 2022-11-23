@@ -1,7 +1,4 @@
-use bevy::{
-    prelude::*,
-    time::FixedTimestep,
-};
+use bevy::{prelude::*, time::FixedTimestep};
 
 const TIME_STEP: f32 = 1.0 / 60.;
 const BACKGROUND_COLOR: Color = Color::rgb(0.9, 0.3, 0.3);
@@ -27,7 +24,7 @@ fn main() {
                 .with_run_criteria(FixedTimestep::step(TIME_STEP as f64))
                 .with_system(ticker)
                 .with_system(apply_velocity)
-                .with_system(move_tetromino)
+                .with_system(move_tetromino),
         )
         .insert_resource(ClearColor(BACKGROUND_COLOR))
         .run();
@@ -51,9 +48,7 @@ struct Tetromino;
 struct Wall;
 
 // Add the game's entities to our world
-fn setup(
-    mut commands: Commands,
-) {
+fn setup(mut commands: Commands) {
     // Camera
     commands.spawn(Camera2dBundle::default());
 
@@ -84,21 +79,14 @@ fn setup(
     ));
 }
 
-fn new_component(
-    translation: Vec3,
-    scale: Vec3,
-    color: Color,
-) -> SpriteBundle {
+fn new_component(translation: Vec3, scale: Vec3, color: Color) -> SpriteBundle {
     SpriteBundle {
         transform: Transform {
             translation,
             scale,
             ..default()
         },
-        sprite: Sprite {
-            color,
-            ..default()
-        },
+        sprite: Sprite { color, ..default() },
         ..default()
     }
 }
@@ -109,10 +97,7 @@ fn window_resize_system(mut windows: ResMut<Windows>) {
     window.set_resolution(500., 800.);
 }
 
-fn ticker(
-    mut query: Query<&mut Transform, With<Tetromino>>,
-    mut state: ResMut<GameState>,
-) {
+fn ticker(mut query: Query<&mut Transform, With<Tetromino>>, mut state: ResMut<GameState>) {
     state.tick = (state.tick + 1) % 1_000_000;
 
     if state.tick % 30 == 0 {
@@ -121,7 +106,8 @@ fn ticker(
         if state.pending_inertia != 0. {
             let mut tetromino_transform = query.single_mut();
             let new_tetromino_position = tetromino_transform.translation.x + state.pending_inertia;
-            tetromino_transform.translation.x = new_tetromino_position.clamp(LEFT_BOUND, RIGHT_BOUND);
+            tetromino_transform.translation.x =
+                new_tetromino_position.clamp(LEFT_BOUND, RIGHT_BOUND);
 
             state.pending_inertia = 0.;
         }
@@ -133,12 +119,11 @@ fn ticker(
     }
 }
 
-fn apply_velocity(
-    mut query: Query<(&mut Transform, &Velocity)>,
-    state: Res<GameState>,
-) {
-    if state.gravity_debounce { return; }
-    
+fn apply_velocity(mut query: Query<(&mut Transform, &Velocity)>, state: Res<GameState>) {
+    if state.gravity_debounce {
+        return;
+    }
+
     for (mut transform, velocity) in &mut query {
         transform.translation.x += velocity.x;
         transform.translation.y += velocity.y;
