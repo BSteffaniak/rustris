@@ -15,8 +15,7 @@ fn main() {
         .add_startup_system(window_resize_system)
         .insert_resource(GameState {
             tick: 0,
-            pending_inertia: 0.,
-            key_debounce: false,
+            key_debounce: 0,
             gravity_debounce: false,
         })
         .add_system_set(
@@ -33,8 +32,7 @@ fn main() {
 #[derive(Resource)]
 struct GameState {
     tick: u64,
-    pending_inertia: f32,
-    key_debounce: bool,
+    key_debounce: u32,
     gravity_debounce: bool,
 }
 
@@ -97,21 +95,13 @@ fn window_resize_system(mut windows: ResMut<Windows>) {
     window.set_resolution(500., 800.);
 }
 
-fn ticker(mut query: Query<&mut Transform, With<Tetromino>>, mut state: ResMut<GameState>) {
+fn ticker(mut state: ResMut<GameState>) {
     state.tick = (state.tick + 1) % 1_000_000;
 
-    if state.tick % 30 == 0 {
-        state.key_debounce = false;
-
-        if state.pending_inertia != 0. {
-            let mut tetromino_transform = query.single_mut();
-            let new_tetromino_position = tetromino_transform.translation.x + state.pending_inertia;
-            tetromino_transform.translation.x =
-                new_tetromino_position.clamp(LEFT_BOUND, RIGHT_BOUND);
-
-            state.pending_inertia = 0.;
-        }
+    if state.key_debounce > 0 {
+        state.key_debounce -= 1;
     }
+
     if state.tick % 60 == 0 {
         state.gravity_debounce = false;
     } else {
@@ -140,21 +130,22 @@ fn move_tetromino(
 
     if keyboard_input.pressed(KeyCode::Left) {
         direction -= 20.0;
+    } else if keyboard_input.just_released(KeyCode::Left) {
+        state.key_debounce = 0;
     }
 
     if keyboard_input.pressed(KeyCode::Right) {
         direction += 20.0;
+    } else if keyboard_input.just_released(KeyCode::Right) {
+        state.key_debounce = 0;
     }
 
-    if direction != 0. && state.key_debounce {
-        state.pending_inertia = direction;
-        return;
+    if direction != 0. && state.key_debounce == 0 {
+        // Calculate the new horizontal paddle position based on player input
+        let new_tetromino_position = tetromino_transform.translation.x + direction;
+
+        tetromino_transform.translation.x = new_tetromino_position.clamp(LEFT_BOUND, RIGHT_BOUND);
+
+        state.key_debounce = 14;
     }
-
-    // Calculate the new horizontal paddle position based on player input
-    let new_tetromino_position = tetromino_transform.translation.x + direction;
-
-    tetromino_transform.translation.x = new_tetromino_position.clamp(LEFT_BOUND, RIGHT_BOUND);
-
-    state.key_debounce = true;
 }
