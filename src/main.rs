@@ -7,6 +7,7 @@ const TETROMINO_SIZE: Vec3 = Vec3::new(120.0, 20.0, 0.0);
 const INITIAL_BALL_DIRECTION: Vec2 = Vec2::new(0., -1.);
 const LEFT_BOUND: f32 = -400.;
 const RIGHT_BOUND: f32 = 400.;
+const WALL_THICKNESS: f32 = 30.;
 
 fn main() {
     App::new()
@@ -52,26 +53,47 @@ fn setup(mut commands: Commands) {
 
     commands.spawn((
         new_component(
-            Vec3::new(0., 0., 0.),
-            Vec3::new(500., 35., 0.),
+            Vec3::new(0., -300., 0.),
+            Vec3::new(400. + WALL_THICKNESS, WALL_THICKNESS, 0.),
+            Color::rgb(0.2, 0.2, 0.9),
+        ),
+        Wall,
+    ));
+    commands.spawn((
+        new_component(
+            Vec3::new(0., 300., 0.),
+            Vec3::new(400. + WALL_THICKNESS, WALL_THICKNESS, 0.),
+            Color::rgb(0.2, 0.2, 0.9),
+        ),
+        Wall,
+    ));
+    commands.spawn((
+        new_component(
+            Vec3::new(-200., 0., 0.),
+            Vec3::new(WALL_THICKNESS, 570., 0.),
+            Color::rgb(0.2, 0.2, 0.9),
+        ),
+        Wall,
+    ));
+    commands.spawn((
+        new_component(
+            Vec3::new(200., 0., 0.),
+            Vec3::new(WALL_THICKNESS, 570., 0.),
             Color::rgb(0.2, 0.2, 0.9),
         ),
         Wall,
     ));
 
     commands.spawn((
-        SpriteBundle {
-            transform: Transform {
-                translation: Vec3::new(0.0, 100., 0.0),
-                scale: TETROMINO_SIZE,
-                ..default()
-            },
-            sprite: Sprite {
-                color: TETROMINO_COLOR,
-                ..default()
-            },
-            ..default()
-        },
+        new_component(
+            Vec3::new(
+                -200. + WALL_THICKNESS / 2. + TETROMINO_SIZE.x / 2.,
+                100.,
+                0.0,
+            ),
+            TETROMINO_SIZE,
+            TETROMINO_COLOR,
+        ),
         Tetromino,
         Velocity(INITIAL_BALL_DIRECTION.normalize() * 20.),
     ));
