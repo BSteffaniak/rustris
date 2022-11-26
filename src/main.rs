@@ -130,9 +130,12 @@ fn new_component(translation: Vec3, scale: Vec3, color: Color) -> SpriteBundle {
 }
 
 fn window_resize_system(mut windows: ResMut<Windows>) {
-    let window = windows.get_primary_mut().unwrap();
-    println!("Window size was: {},{}", window.width(), window.height());
-    window.set_resolution(500., 800.);
+    if let Some(window) = windows.get_primary_mut() {
+        println!("Window size was: {},{}", window.width(), window.height());
+        window.set_resolution(500., 800.);
+    } else {
+        println!("Could not get window!");
+    }
 }
 
 fn ticker(mut state: ResMut<GameState>) {
