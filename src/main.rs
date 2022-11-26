@@ -59,44 +59,40 @@ fn setup(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
 
     // TOP
-    commands.spawn((
-        new_component(
-            Vec2::new(0., -BOARD_HEIGHT / 2. - WALL_THICKNESS / 2.),
-            Vec2::new(BOARD_WIDTH + WALL_THICKNESS * 2., WALL_THICKNESS),
-            Color::rgb(0.2, 0.2, 0.9),
-        ),
+    spawn_component(
+        &mut commands,
+        Vec2::new(0., -BOARD_HEIGHT / 2. - WALL_THICKNESS / 2.),
+        Vec2::new(BOARD_WIDTH + WALL_THICKNESS * 2., WALL_THICKNESS),
+        Color::rgb(0.2, 0.2, 0.9),
         Wall,
-    ));
+    );
     // BOTTOM
-    commands.spawn((
-        new_component(
-            Vec2::new(0., BOARD_HEIGHT / 2. + WALL_THICKNESS / 2.),
-            Vec2::new(BOARD_WIDTH + WALL_THICKNESS * 2., WALL_THICKNESS),
-            Color::rgb(0.2, 0.2, 0.9),
-        ),
+    spawn_component(
+        &mut commands,
+        Vec2::new(0., BOARD_HEIGHT / 2. + WALL_THICKNESS / 2.),
+        Vec2::new(BOARD_WIDTH + WALL_THICKNESS * 2., WALL_THICKNESS),
+        Color::rgb(0.2, 0.2, 0.9),
         Wall,
-    ));
+    );
     // LEFT
-    commands.spawn((
-        new_component(
-            Vec2::new(-BOARD_WIDTH / 2. - WALL_THICKNESS / 2., 0.),
-            Vec2::new(WALL_THICKNESS, BOARD_HEIGHT + WALL_THICKNESS * 2.),
-            Color::rgb(0.2, 0.2, 0.9),
-        ),
+    spawn_component(
+        &mut commands,
+        Vec2::new(-BOARD_WIDTH / 2. - WALL_THICKNESS / 2., 0.),
+        Vec2::new(WALL_THICKNESS, BOARD_HEIGHT + WALL_THICKNESS * 2.),
+        Color::rgb(0.2, 0.2, 0.9),
         Wall,
-    ));
+    );
     // RIGHT
-    commands.spawn((
-        new_component(
-            Vec2::new(BOARD_WIDTH / 2. + WALL_THICKNESS / 2., 0.),
-            Vec2::new(WALL_THICKNESS, BOARD_HEIGHT + WALL_THICKNESS * 2.),
-            Color::rgb(0.2, 0.2, 0.9),
-        ),
+    spawn_component(
+        &mut commands,
+        Vec2::new(BOARD_WIDTH / 2. + WALL_THICKNESS / 2., 0.),
+        Vec2::new(WALL_THICKNESS, BOARD_HEIGHT + WALL_THICKNESS * 2.),
+        Color::rgb(0.2, 0.2, 0.9),
         Wall,
-    ));
+    );
 
     spawn_component(
-        commands,
+        &mut commands,
         INITIAL_TETROMINO_POSITION,
         TETROMINO_SIZE,
         TETROMINO_COLOR,
@@ -108,7 +104,7 @@ fn setup(mut commands: Commands) {
 }
 
 fn spawn_component<T: Bundle>(
-    mut commands: Commands,
+    commands: &mut Commands,
     translation: Vec2,
     scale: Vec2,
     color: Color,
