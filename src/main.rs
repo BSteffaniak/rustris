@@ -58,38 +58,7 @@ fn setup(mut commands: Commands) {
     // Camera
     commands.spawn(Camera2dBundle::default());
 
-    // TOP
-    spawn_component(
-        &mut commands,
-        Vec2::new(0., -BOARD_HEIGHT / 2. - WALL_THICKNESS / 2.),
-        Vec2::new(BOARD_WIDTH + WALL_THICKNESS * 2., WALL_THICKNESS),
-        Color::CYAN,
-        Wall,
-    );
-    // BOTTOM
-    spawn_component(
-        &mut commands,
-        Vec2::new(0., BOARD_HEIGHT / 2. + WALL_THICKNESS / 2.),
-        Vec2::new(BOARD_WIDTH + WALL_THICKNESS * 2., WALL_THICKNESS),
-        Color::CYAN,
-        Wall,
-    );
-    // LEFT
-    spawn_component(
-        &mut commands,
-        Vec2::new(-BOARD_WIDTH / 2. - WALL_THICKNESS / 2., 0.),
-        Vec2::new(WALL_THICKNESS, BOARD_HEIGHT + WALL_THICKNESS * 2.),
-        Color::CYAN,
-        Wall,
-    );
-    // RIGHT
-    spawn_component(
-        &mut commands,
-        Vec2::new(BOARD_WIDTH / 2. + WALL_THICKNESS / 2., 0.),
-        Vec2::new(WALL_THICKNESS, BOARD_HEIGHT + WALL_THICKNESS * 2.),
-        Color::CYAN,
-        Wall,
-    );
+    spawn_board(&mut commands);
 
     spawn_component(
         &mut commands,
@@ -100,6 +69,41 @@ fn setup(mut commands: Commands) {
             Tetromino,
             Velocity(INITIAL_BALL_DIRECTION.normalize() * TETROMINO_BLOCK_SIZE),
         ),
+    );
+}
+
+fn spawn_board(commands: &mut Commands) {
+    // TOP
+    spawn_component(
+        commands,
+        Vec2::new(0., -BOARD_HEIGHT / 2. - WALL_THICKNESS / 2.),
+        Vec2::new(BOARD_WIDTH + WALL_THICKNESS * 2., WALL_THICKNESS),
+        Color::CYAN,
+        Wall,
+    );
+    // BOTTOM
+    spawn_component(
+        commands,
+        Vec2::new(0., BOARD_HEIGHT / 2. + WALL_THICKNESS / 2.),
+        Vec2::new(BOARD_WIDTH + WALL_THICKNESS * 2., WALL_THICKNESS),
+        Color::CYAN,
+        Wall,
+    );
+    // LEFT
+    spawn_component(
+        commands,
+        Vec2::new(-BOARD_WIDTH / 2. - WALL_THICKNESS / 2., 0.),
+        Vec2::new(WALL_THICKNESS, BOARD_HEIGHT + WALL_THICKNESS * 2.),
+        Color::CYAN,
+        Wall,
+    );
+    // RIGHT
+    spawn_component(
+        commands,
+        Vec2::new(BOARD_WIDTH / 2. + WALL_THICKNESS / 2., 0.),
+        Vec2::new(WALL_THICKNESS, BOARD_HEIGHT + WALL_THICKNESS * 2.),
+        Color::CYAN,
+        Wall,
     );
 }
 
