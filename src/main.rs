@@ -80,6 +80,7 @@ fn spawn_tetromino(commands: &mut Commands) {
         (
             Tetromino,
             Velocity(INITIAL_TETROMINO_DIRECTION.normalize() * TETROMINO_BLOCK_SIZE),
+            Collider,
         ),
     );
 }
@@ -220,52 +221,57 @@ fn move_tetromino(
 
 fn check_for_collisions(
     mut commands: Commands,
-    mut tetromino_query: Query<(&mut Velocity, &Transform), With<Tetromino>>,
-    collider_query: Query<&Transform, With<Collider>>,
+    mut tetromino_query: Query<(Entity, &mut Velocity, &Transform), With<Tetromino>>,
+    collider_query: Query<(Entity, &Transform), With<Collider>>,
     mut collision_events: EventWriter<CollisionEvent>,
 ) {
-    tetromino_query.for_each_mut(|(mut tetromino_velocity, tetromino_transform)| {
-        if tetromino_velocity.y == 0. {
-            return;
-        }
+    tetromino_query.for_each_mut(
+        |(tetromino_entity, mut tetromino_velocity, tetromino_transform)| {
+            if tetromino_velocity.y == 0. {
+                return;
+            }
 
-        let tetromino_size = tetromino_transform.scale.truncate();
+            let tetromino_size = tetromino_transform.scale.truncate();
 
-        // check collision with walls
-        for transform in &collider_query {
-            let next_position = tetromino_transform
-                .with_translation(
-                    tetromino_transform.translation - Vec3::new(0., TETROMINO_BLOCK_SIZE, 0.),
-                )
-                .translation;
-
-            let collision = collide(
-                next_position,
-                tetromino_size,
-                transform.translation,
-                transform.scale.truncate(),
-            );
-
-            if let Some(collision) = collision {
-                // Sends a collision event so that other systems can react to the collision
-                collision_events.send_default();
-
-                let mut hit_bottom = false;
-
-                match collision {
-                    Collision::Left => { /* do nothing */ }
-                    Collision::Right => { /* do nothing */ }
-                    Collision::Top => hit_bottom = true,
-                    Collision::Bottom => hit_bottom = true,
-                    Collision::Inside => hit_bottom = true,
+            // check collision with walls
+            for (entity, transform) in &collider_query {
+                if entity == tetromino_entity {
+                    continue;
                 }
 
-                // reflect velocity on the y-axis if we hit something on the y-axis
-                if hit_bottom {
-                    tetromino_velocity.y = 0.;
-                    spawn_tetromino(&mut commands);
+                let next_position = tetromino_transform
+                    .with_translation(
+                        tetromino_transform.translation - Vec3::new(0., TETROMINO_BLOCK_SIZE, 0.),
+                    )
+                    .translation;
+
+                let collision = collide(
+                    next_position,
+                    tetromino_size,
+                    transform.translation,
+                    transform.scale.truncate(),
+                );
+
+                if let Some(collision) = collision {
+                    // Sends a collision event so that other systems can react to the collision
+                    collision_events.send_default();
+
+                    let mut hit_bottom = false;
+
+                    match collision {
+                        Collision::Left => { /* do nothing */ }
+                        Collision::Right => { /* do nothing */ }
+                        Collision::Top => hit_bottom = true,
+                        Collision::Bottom => hit_bottom = true,
+                        Collision::Inside => hit_bottom = true,
+                    }
+
+                    if hit_bottom {
+                        tetromino_velocity.y = 0.;
+                        spawn_tetromino(&mut commands);
+                    }
                 }
             }
-        }
-    });
+        },
+    );
 }
