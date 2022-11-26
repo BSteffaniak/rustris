@@ -4,8 +4,12 @@ const TIME_STEP: f32 = 1.0 / 60.;
 const TETROMINO_BLOCK_SIZE: f32 = 32.;
 const BACKGROUND_COLOR: Color = Color::rgb(0.9, 0.3, 0.3);
 const TETROMINO_COLOR: Color = Color::rgb(0.2, 0.2, 0.9);
-const TETROMINO_SIZE: Vec3 = Vec3::new(TETROMINO_BLOCK_SIZE * 3., TETROMINO_BLOCK_SIZE, 0.0);
+const TETROMINO_SIZE: Vec2 = Vec2::new(TETROMINO_BLOCK_SIZE * 3., TETROMINO_BLOCK_SIZE);
 const INITIAL_BALL_DIRECTION: Vec2 = Vec2::new(0., -1.);
+const INITIAL_TETROMINO_POSITION: Vec2 = Vec2::new(
+    BOARD_WIDTH / 2. - TETROMINO_SIZE.x / 2.,
+    BOARD_HEIGHT / 2. - TETROMINO_SIZE.y / 2.,
+);
 const BOARD_WIDTH: f32 = TETROMINO_BLOCK_SIZE * 12.;
 const BOARD_HEIGHT: f32 = TETROMINO_BLOCK_SIZE * 20.;
 const LEFT_BOUND: f32 = -BOARD_WIDTH / 2.;
@@ -57,8 +61,8 @@ fn setup(mut commands: Commands) {
     // TOP
     commands.spawn((
         new_component(
-            Vec3::new(0., -BOARD_HEIGHT / 2. - WALL_THICKNESS / 2., 0.),
-            Vec3::new(BOARD_WIDTH + WALL_THICKNESS * 2., WALL_THICKNESS, 0.),
+            Vec2::new(0., -BOARD_HEIGHT / 2. - WALL_THICKNESS / 2.),
+            Vec2::new(BOARD_WIDTH + WALL_THICKNESS * 2., WALL_THICKNESS),
             Color::rgb(0.2, 0.2, 0.9),
         ),
         Wall,
@@ -66,8 +70,8 @@ fn setup(mut commands: Commands) {
     // BOTTOM
     commands.spawn((
         new_component(
-            Vec3::new(0., BOARD_HEIGHT / 2. + WALL_THICKNESS / 2., 0.),
-            Vec3::new(BOARD_WIDTH + WALL_THICKNESS * 2., WALL_THICKNESS, 0.),
+            Vec2::new(0., BOARD_HEIGHT / 2. + WALL_THICKNESS / 2.),
+            Vec2::new(BOARD_WIDTH + WALL_THICKNESS * 2., WALL_THICKNESS),
             Color::rgb(0.2, 0.2, 0.9),
         ),
         Wall,
@@ -75,8 +79,8 @@ fn setup(mut commands: Commands) {
     // LEFT
     commands.spawn((
         new_component(
-            Vec3::new(-BOARD_WIDTH / 2. - WALL_THICKNESS / 2., 0., 0.),
-            Vec3::new(WALL_THICKNESS, BOARD_HEIGHT + WALL_THICKNESS * 2., 0.),
+            Vec2::new(-BOARD_WIDTH / 2. - WALL_THICKNESS / 2., 0.),
+            Vec2::new(WALL_THICKNESS, BOARD_HEIGHT + WALL_THICKNESS * 2.),
             Color::rgb(0.2, 0.2, 0.9),
         ),
         Wall,
@@ -84,8 +88,8 @@ fn setup(mut commands: Commands) {
     // RIGHT
     commands.spawn((
         new_component(
-            Vec3::new(BOARD_WIDTH / 2. + WALL_THICKNESS / 2., 0., 0.),
-            Vec3::new(WALL_THICKNESS, BOARD_HEIGHT + WALL_THICKNESS * 2., 0.),
+            Vec2::new(BOARD_WIDTH / 2. + WALL_THICKNESS / 2., 0.),
+            Vec2::new(WALL_THICKNESS, BOARD_HEIGHT + WALL_THICKNESS * 2.),
             Color::rgb(0.2, 0.2, 0.9),
         ),
         Wall,
@@ -93,11 +97,7 @@ fn setup(mut commands: Commands) {
 
     spawn_component(
         commands,
-        Vec3::new(
-            BOARD_WIDTH / 2. - TETROMINO_SIZE.x / 2.,
-            BOARD_HEIGHT / 2. - TETROMINO_SIZE.y / 2.,
-            0.0,
-        ),
+        INITIAL_TETROMINO_POSITION,
         TETROMINO_SIZE,
         TETROMINO_COLOR,
         (
@@ -109,19 +109,19 @@ fn setup(mut commands: Commands) {
 
 fn spawn_component<T: Bundle>(
     mut commands: Commands,
-    translation: Vec3,
-    scale: Vec3,
+    translation: Vec2,
+    scale: Vec2,
     color: Color,
     component: T,
 ) {
     commands.spawn((new_component(translation, scale, color), component));
 }
 
-fn new_component(translation: Vec3, scale: Vec3, color: Color) -> SpriteBundle {
+fn new_component(translation: Vec2, scale: Vec2, color: Color) -> SpriteBundle {
     SpriteBundle {
         transform: Transform {
-            translation,
-            scale,
+            translation: translation.extend(0.),
+            scale: scale.extend(0.),
             ..default()
         },
         sprite: Sprite { color, ..default() },
