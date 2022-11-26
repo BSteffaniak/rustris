@@ -135,14 +135,15 @@ fn window_resize_system(mut windows: ResMut<Windows>) {
 }
 
 fn ticker(mut state: ResMut<GameState>) {
-    state.tick = (state.tick + 1) % 1_000_000;
+    state.tick += 1;
 
     if state.key_debounce > 0 {
         state.key_debounce -= 1;
     }
 
-    if state.tick % 60 == 0 {
+    if state.tick >= 60 {
         state.gravity_debounce = false;
+        state.tick = 0;
     } else {
         state.gravity_debounce = true;
     }
@@ -189,5 +190,9 @@ fn move_tetromino(
         );
 
         state.key_debounce = 14;
+    }
+
+    if keyboard_input.pressed(KeyCode::Down) {
+        state.tick += 20;
     }
 }
