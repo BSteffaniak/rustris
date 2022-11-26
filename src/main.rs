@@ -1,13 +1,16 @@
 use bevy::{prelude::*, time::FixedTimestep};
 
 const TIME_STEP: f32 = 1.0 / 60.;
+const TETROMINO_BLOCK_SIZE: f32 = 32.;
 const BACKGROUND_COLOR: Color = Color::rgb(0.9, 0.3, 0.3);
 const TETROMINO_COLOR: Color = Color::rgb(0.2, 0.2, 0.9);
-const TETROMINO_SIZE: Vec3 = Vec3::new(120.0, 20.0, 0.0);
+const TETROMINO_SIZE: Vec3 = Vec3::new(TETROMINO_BLOCK_SIZE * 3., TETROMINO_BLOCK_SIZE, 0.0);
 const INITIAL_BALL_DIRECTION: Vec2 = Vec2::new(0., -1.);
-const LEFT_BOUND: f32 = -400.;
-const RIGHT_BOUND: f32 = 400.;
-const WALL_THICKNESS: f32 = 30.;
+const BOARD_WIDTH: f32 = TETROMINO_BLOCK_SIZE * 12.;
+const BOARD_HEIGHT: f32 = TETROMINO_BLOCK_SIZE * 20.;
+const LEFT_BOUND: f32 = -BOARD_WIDTH / 2.;
+const RIGHT_BOUND: f32 = BOARD_WIDTH / 2.;
+const WALL_THICKNESS: f32 = 32.;
 
 fn main() {
     App::new()
@@ -51,34 +54,38 @@ fn setup(mut commands: Commands) {
     // Camera
     commands.spawn(Camera2dBundle::default());
 
+    // TOP
     commands.spawn((
         new_component(
-            Vec3::new(0., -300., 0.),
-            Vec3::new(400. + WALL_THICKNESS, WALL_THICKNESS, 0.),
+            Vec3::new(0., -BOARD_HEIGHT / 2. - WALL_THICKNESS / 2., 0.),
+            Vec3::new(BOARD_WIDTH + WALL_THICKNESS * 2., WALL_THICKNESS, 0.),
             Color::rgb(0.2, 0.2, 0.9),
         ),
         Wall,
     ));
+    // BOTTOM
     commands.spawn((
         new_component(
-            Vec3::new(0., 300., 0.),
-            Vec3::new(400. + WALL_THICKNESS, WALL_THICKNESS, 0.),
+            Vec3::new(0., BOARD_HEIGHT / 2. + WALL_THICKNESS / 2., 0.),
+            Vec3::new(BOARD_WIDTH + WALL_THICKNESS * 2., WALL_THICKNESS, 0.),
             Color::rgb(0.2, 0.2, 0.9),
         ),
         Wall,
     ));
+    // LEFT
     commands.spawn((
         new_component(
-            Vec3::new(-200., 0., 0.),
-            Vec3::new(WALL_THICKNESS, 570., 0.),
+            Vec3::new(-BOARD_WIDTH / 2. - WALL_THICKNESS / 2., 0., 0.),
+            Vec3::new(WALL_THICKNESS, BOARD_HEIGHT + WALL_THICKNESS * 2., 0.),
             Color::rgb(0.2, 0.2, 0.9),
         ),
         Wall,
     ));
+    // RIGHT
     commands.spawn((
         new_component(
-            Vec3::new(200., 0., 0.),
-            Vec3::new(WALL_THICKNESS, 570., 0.),
+            Vec3::new(BOARD_WIDTH / 2. + WALL_THICKNESS / 2., 0., 0.),
+            Vec3::new(WALL_THICKNESS, BOARD_HEIGHT + WALL_THICKNESS * 2., 0.),
             Color::rgb(0.2, 0.2, 0.9),
         ),
         Wall,
@@ -87,15 +94,15 @@ fn setup(mut commands: Commands) {
     commands.spawn((
         new_component(
             Vec3::new(
-                -200. + WALL_THICKNESS / 2. + TETROMINO_SIZE.x / 2.,
-                100.,
+                -BOARD_WIDTH / 2. + TETROMINO_SIZE.x / 2.,
+                BOARD_HEIGHT / 2. - TETROMINO_SIZE.y / 2.,
                 0.0,
             ),
             TETROMINO_SIZE,
             TETROMINO_COLOR,
         ),
         Tetromino,
-        Velocity(INITIAL_BALL_DIRECTION.normalize() * 20.),
+        Velocity(INITIAL_BALL_DIRECTION.normalize() * TETROMINO_BLOCK_SIZE),
     ));
 }
 
@@ -151,13 +158,13 @@ fn move_tetromino(
     let mut direction = 0.0;
 
     if keyboard_input.pressed(KeyCode::Left) {
-        direction -= 20.0;
+        direction -= TETROMINO_BLOCK_SIZE;
     } else if keyboard_input.just_released(KeyCode::Left) {
         state.key_debounce = 0;
     }
 
     if keyboard_input.pressed(KeyCode::Right) {
-        direction += 20.0;
+        direction += TETROMINO_BLOCK_SIZE;
     } else if keyboard_input.just_released(KeyCode::Right) {
         state.key_debounce = 0;
     }
@@ -166,7 +173,10 @@ fn move_tetromino(
         // Calculate the new horizontal paddle position based on player input
         let new_tetromino_position = tetromino_transform.translation.x + direction;
 
-        tetromino_transform.translation.x = new_tetromino_position.clamp(LEFT_BOUND, RIGHT_BOUND);
+        tetromino_transform.translation.x = new_tetromino_position.clamp(
+            LEFT_BOUND + TETROMINO_SIZE.x / 2.,
+            RIGHT_BOUND - TETROMINO_SIZE.x / 2.,
+        );
 
         state.key_debounce = 14;
     }
