@@ -90,20 +90,45 @@ fn setup(mut commands: Commands) {
         ),
         Wall,
     ));
-
-    commands.spawn((
-        new_component(
-            Vec3::new(
-                -BOARD_WIDTH / 2. + TETROMINO_SIZE.x / 2.,
-                BOARD_HEIGHT / 2. - TETROMINO_SIZE.y / 2.,
-                0.0,
+    /*
+        commands.spawn((
+            new_component(
+                Vec3::new(
+                    -BOARD_WIDTH / 2. + TETROMINO_SIZE.x / 2.,
+                    BOARD_HEIGHT / 2. - TETROMINO_SIZE.y / 2.,
+                    0.0,
+                ),
+                TETROMINO_SIZE,
+                TETROMINO_COLOR,
             ),
-            TETROMINO_SIZE,
-            TETROMINO_COLOR,
+            Tetromino,
+            Velocity(INITIAL_BALL_DIRECTION.normalize() * TETROMINO_BLOCK_SIZE),
+        ));
+    */
+    spawn_component(
+        commands,
+        Vec3::new(
+            BOARD_WIDTH / 2. - TETROMINO_SIZE.x / 2.,
+            BOARD_HEIGHT / 2. - TETROMINO_SIZE.y / 2.,
+            0.0,
         ),
-        Tetromino,
-        Velocity(INITIAL_BALL_DIRECTION.normalize() * TETROMINO_BLOCK_SIZE),
-    ));
+        TETROMINO_SIZE,
+        TETROMINO_COLOR,
+        (
+            Tetromino,
+            Velocity(INITIAL_BALL_DIRECTION.normalize() * TETROMINO_BLOCK_SIZE),
+        ),
+    );
+}
+
+fn spawn_component<T: Bundle>(
+    mut commands: Commands,
+    translation: Vec3,
+    scale: Vec3,
+    color: Color,
+    component: T,
+) {
+    commands.spawn((new_component(translation, scale, color), component));
 }
 
 fn new_component(translation: Vec3, scale: Vec3, color: Color) -> SpriteBundle {
