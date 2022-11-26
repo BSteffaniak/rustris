@@ -2,19 +2,19 @@ use bevy::{prelude::*, time::FixedTimestep};
 
 const TIME_STEP: f32 = 1.0 / 60.;
 const TETROMINO_BLOCK_SIZE: f32 = 32.;
-const BACKGROUND_COLOR: Color = Color::rgb(0.9, 0.3, 0.3);
-const TETROMINO_COLOR: Color = Color::rgb(0.2, 0.2, 0.9);
+const BACKGROUND_COLOR: Color = Color::BLACK;
+const TETROMINO_COLOR: Color = Color::CYAN;
 const TETROMINO_SIZE: Vec2 = Vec2::new(TETROMINO_BLOCK_SIZE * 3., TETROMINO_BLOCK_SIZE);
 const INITIAL_BALL_DIRECTION: Vec2 = Vec2::new(0., -1.);
 const INITIAL_TETROMINO_POSITION: Vec2 = Vec2::new(
     BOARD_WIDTH / 2. - TETROMINO_SIZE.x / 2.,
     BOARD_HEIGHT / 2. - TETROMINO_SIZE.y / 2.,
 );
-const BOARD_WIDTH: f32 = TETROMINO_BLOCK_SIZE * 12.;
+const BOARD_WIDTH: f32 = TETROMINO_BLOCK_SIZE * 10.;
 const BOARD_HEIGHT: f32 = TETROMINO_BLOCK_SIZE * 20.;
 const LEFT_BOUND: f32 = -BOARD_WIDTH / 2.;
 const RIGHT_BOUND: f32 = BOARD_WIDTH / 2.;
-const WALL_THICKNESS: f32 = 32.;
+const WALL_THICKNESS: f32 = 7.;
 
 fn main() {
     App::new()
@@ -63,7 +63,7 @@ fn setup(mut commands: Commands) {
         &mut commands,
         Vec2::new(0., -BOARD_HEIGHT / 2. - WALL_THICKNESS / 2.),
         Vec2::new(BOARD_WIDTH + WALL_THICKNESS * 2., WALL_THICKNESS),
-        Color::rgb(0.2, 0.2, 0.9),
+        Color::CYAN,
         Wall,
     );
     // BOTTOM
@@ -71,7 +71,7 @@ fn setup(mut commands: Commands) {
         &mut commands,
         Vec2::new(0., BOARD_HEIGHT / 2. + WALL_THICKNESS / 2.),
         Vec2::new(BOARD_WIDTH + WALL_THICKNESS * 2., WALL_THICKNESS),
-        Color::rgb(0.2, 0.2, 0.9),
+        Color::CYAN,
         Wall,
     );
     // LEFT
@@ -79,7 +79,7 @@ fn setup(mut commands: Commands) {
         &mut commands,
         Vec2::new(-BOARD_WIDTH / 2. - WALL_THICKNESS / 2., 0.),
         Vec2::new(WALL_THICKNESS, BOARD_HEIGHT + WALL_THICKNESS * 2.),
-        Color::rgb(0.2, 0.2, 0.9),
+        Color::CYAN,
         Wall,
     );
     // RIGHT
@@ -87,7 +87,7 @@ fn setup(mut commands: Commands) {
         &mut commands,
         Vec2::new(BOARD_WIDTH / 2. + WALL_THICKNESS / 2., 0.),
         Vec2::new(WALL_THICKNESS, BOARD_HEIGHT + WALL_THICKNESS * 2.),
-        Color::rgb(0.2, 0.2, 0.9),
+        Color::CYAN,
         Wall,
     );
 
