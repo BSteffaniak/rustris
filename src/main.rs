@@ -13,8 +13,6 @@ const INITIAL_TETROMINO_POSITION: Vec2 = Vec2::new(
 );
 const BOARD_WIDTH: f32 = TETROMINO_BLOCK_SIZE * 10.;
 const BOARD_HEIGHT: f32 = TETROMINO_BLOCK_SIZE * 20.;
-const LEFT_BOUND: f32 = -BOARD_WIDTH / 2.;
-const RIGHT_BOUND: f32 = BOARD_WIDTH / 2.;
 const WALL_THICKNESS: f32 = 7.;
 
 fn main() {
@@ -31,10 +29,10 @@ fn main() {
         .add_system_set(
             SystemSet::new()
                 .with_run_criteria(FixedTimestep::step(TIME_STEP as f64))
-                .with_system(check_for_collisions)
                 .with_system(ticker)
-                .with_system(apply_velocity)
-                .with_system(move_tetromino),
+                .with_system(move_tetromino.after(ticker))
+                .with_system(check_for_collisions.after(move_tetromino))
+                .with_system(apply_velocity.after(check_for_collisions)),
         )
         .insert_resource(ClearColor(BACKGROUND_COLOR))
         .run();
@@ -51,7 +49,9 @@ struct GameState {
 struct Velocity(Vec2);
 
 #[derive(Component)]
-struct Tetromino;
+struct Tetromino {
+    active: bool,
+}
 
 #[derive(Component)]
 struct Wall;
@@ -78,7 +78,7 @@ fn spawn_tetromino(commands: &mut Commands) {
         TETROMINO_SIZE,
         TETROMINO_COLOR,
         (
-            Tetromino,
+            Tetromino { active: true },
             Velocity(INITIAL_TETROMINO_DIRECTION.normalize() * TETROMINO_BLOCK_SIZE),
             Collider,
         ),
@@ -166,112 +166,129 @@ fn ticker(mut state: ResMut<GameState>) {
     }
 }
 
-fn apply_velocity(mut query: Query<(&mut Transform, &Velocity)>, state: Res<GameState>) {
-    if state.gravity_debounce {
-        return;
-    }
-
-    for (mut transform, velocity) in &mut query {
+fn apply_velocity(mut query: Query<(&mut Velocity, &mut Transform), With<Tetromino>>) {
+    query.for_each_mut(|(mut velocity, mut transform)| {
         transform.translation.x += velocity.x;
         transform.translation.y += velocity.y;
-    }
+
+        velocity.x = 0.;
+        velocity.y = 0.;
+    });
 }
 
 fn move_tetromino(
     keyboard_input: Res<Input<KeyCode>>,
-    mut query: Query<(&mut Velocity, &mut Transform), With<Tetromino>>,
+    mut query: Query<(&mut Velocity, &Tetromino), With<Tetromino>>,
     mut state: ResMut<GameState>,
 ) {
-    query.for_each_mut(|(tetromino_velocity, mut tetromino_transform)| {
-        if tetromino_velocity.y == 0. {
+    query.for_each_mut(|(mut tetromino_velocity, tetromino)| {
+        if !tetromino.active {
             return;
         }
 
-        let mut direction = 0.0;
-
-        if keyboard_input.pressed(KeyCode::Left) {
-            direction -= TETROMINO_BLOCK_SIZE;
+        if keyboard_input.pressed(KeyCode::Left) && state.key_debounce == 0 {
+            tetromino_velocity.x = -TETROMINO_BLOCK_SIZE;
         } else if keyboard_input.just_released(KeyCode::Left) {
             state.key_debounce = 0;
         }
 
-        if keyboard_input.pressed(KeyCode::Right) {
-            direction += TETROMINO_BLOCK_SIZE;
+        if keyboard_input.pressed(KeyCode::Right) && state.key_debounce == 0 {
+            tetromino_velocity.x = TETROMINO_BLOCK_SIZE;
         } else if keyboard_input.just_released(KeyCode::Right) {
             state.key_debounce = 0;
         }
 
-        if direction != 0. && state.key_debounce == 0 {
+        if tetromino_velocity.x != 0. && state.key_debounce == 0 {
             // Calculate the new horizontal paddle position based on player input
-            let new_tetromino_position = tetromino_transform.translation.x + direction;
-
-            tetromino_transform.translation.x = new_tetromino_position.clamp(
-                LEFT_BOUND + TETROMINO_SIZE.x / 2.,
-                RIGHT_BOUND - TETROMINO_SIZE.x / 2.,
-            );
-
             state.key_debounce = 14;
         }
 
         if keyboard_input.pressed(KeyCode::Down) {
             state.tick += 20;
         }
+        if !state.gravity_debounce {
+            tetromino_velocity.y = -TETROMINO_BLOCK_SIZE;
+        }
     });
 }
 
 fn check_for_collisions(
     mut commands: Commands,
-    mut tetromino_query: Query<(Entity, &mut Velocity, &Transform), With<Tetromino>>,
+    mut tetromino_query: Query<
+        (Entity, &mut Velocity, &Transform, &mut Tetromino),
+        With<Tetromino>,
+    >,
     collider_query: Query<(Entity, &Transform), With<Collider>>,
     mut collision_events: EventWriter<CollisionEvent>,
 ) {
     tetromino_query.for_each_mut(
-        |(tetromino_entity, mut tetromino_velocity, tetromino_transform)| {
-            if tetromino_velocity.y == 0. {
+        |(tetromino_entity, mut tetromino_velocity, tetromino_transform, mut tetromino)| {
+            if !tetromino.active {
                 return;
             }
 
-            let tetromino_size = tetromino_transform.scale.truncate();
-
-            // check collision with walls
             for (entity, transform) in &collider_query {
                 if entity == tetromino_entity {
-                    continue;
+                    continue; // Do not check collision with self
                 }
 
-                let next_position = tetromino_transform
+                let x_position = tetromino_transform
                     .with_translation(
-                        tetromino_transform.translation - Vec3::new(0., TETROMINO_BLOCK_SIZE, 0.),
+                        tetromino_transform.translation + Vec3::new(tetromino_velocity.0.x, 0., 0.),
                     )
                     .translation;
 
-                let collision = collide(
-                    next_position,
-                    tetromino_size,
-                    transform.translation,
-                    transform.scale.truncate(),
-                );
+                if check_collision(
+                    tetromino_transform,
+                    transform,
+                    &mut collision_events,
+                    x_position,
+                ) {
+                    tetromino_velocity.0.x = 0.;
+                }
 
-                if let Some(collision) = collision {
-                    // Sends a collision event so that other systems can react to the collision
-                    collision_events.send_default();
+                let y_position = tetromino_transform
+                    .with_translation(
+                        tetromino_transform.translation + Vec3::new(0., tetromino_velocity.0.y, 0.),
+                    )
+                    .translation;
 
-                    let mut hit_bottom = false;
-
-                    match collision {
-                        Collision::Left => { /* do nothing */ }
-                        Collision::Right => { /* do nothing */ }
-                        Collision::Top => hit_bottom = true,
-                        Collision::Bottom => hit_bottom = true,
-                        Collision::Inside => hit_bottom = true,
-                    }
-
-                    if hit_bottom {
-                        tetromino_velocity.y = 0.;
-                        spawn_tetromino(&mut commands);
-                    }
+                if check_collision(
+                    tetromino_transform,
+                    transform,
+                    &mut collision_events,
+                    y_position,
+                ) {
+                    tetromino.active = false;
+                    tetromino_velocity.0.y = 0.;
+                    spawn_tetromino(&mut commands);
                 }
             }
         },
     );
+}
+
+fn check_collision(
+    tetromino_transform: &Transform,
+    transform: &Transform,
+    collision_events: &mut EventWriter<CollisionEvent>,
+    position: Vec3,
+) -> bool {
+    let tetromino_size = tetromino_transform.scale.truncate();
+
+    let collision = collide(
+        position,
+        tetromino_size,
+        transform.translation,
+        transform.scale.truncate(),
+    );
+
+    if collision.is_some() {
+        // Sends a collision event so that other systems can react to the collision
+        collision_events.send_default();
+
+        true
+    } else {
+        false
+    }
 }
