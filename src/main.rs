@@ -1,4 +1,4 @@
-use bevy::sprite::collide_aabb::{collide, Collision};
+use bevy::sprite::collide_aabb::collide;
 use bevy::{prelude::*, time::FixedTimestep};
 
 const TIME_STEP: f32 = 1.0 / 60.;
@@ -54,6 +54,9 @@ struct Tetromino {
 }
 
 #[derive(Component)]
+struct Square;
+
+#[derive(Component)]
 struct Wall;
 
 #[derive(Component)]
@@ -72,62 +75,82 @@ fn setup(mut commands: Commands) {
 }
 
 fn spawn_tetromino(commands: &mut Commands) {
-    spawn_component(
-        commands,
-        INITIAL_TETROMINO_POSITION,
-        TETROMINO_SIZE,
-        TETROMINO_COLOR,
-        (
-            Tetromino { active: true },
-            Velocity(INITIAL_TETROMINO_DIRECTION.normalize() * TETROMINO_BLOCK_SIZE),
-            Collider,
-        ),
-    );
+    let squares: [Entity; 4] = [
+        commands
+            .spawn((
+                new_component(INITIAL_TETROMINO_POSITION, TETROMINO_SIZE, TETROMINO_COLOR),
+                Square,
+            ))
+            .id(),
+        commands
+            .spawn((
+                new_component(INITIAL_TETROMINO_POSITION, TETROMINO_SIZE, TETROMINO_COLOR),
+                Square,
+            ))
+            .id(),
+        commands
+            .spawn((
+                new_component(INITIAL_TETROMINO_POSITION, TETROMINO_SIZE, TETROMINO_COLOR),
+                Square,
+            ))
+            .id(),
+        commands
+            .spawn((
+                new_component(INITIAL_TETROMINO_POSITION, TETROMINO_SIZE, TETROMINO_COLOR),
+                Square,
+            ))
+            .id(),
+    ];
+
+    commands
+        .spawn((
+            new_component(INITIAL_TETROMINO_POSITION, TETROMINO_SIZE, TETROMINO_COLOR),
+            (
+                Tetromino { active: true },
+                Velocity(INITIAL_TETROMINO_DIRECTION.normalize() * TETROMINO_BLOCK_SIZE),
+                Collider,
+            ),
+        ))
+        .push_children(&squares);
 }
 
 fn spawn_board(commands: &mut Commands) {
     // BOTTOM
-    spawn_component(
-        commands,
-        Vec2::new(0., -BOARD_HEIGHT / 2. - WALL_THICKNESS / 2.),
-        Vec2::new(BOARD_WIDTH + WALL_THICKNESS * 2., WALL_THICKNESS),
-        Color::CYAN,
+    commands.spawn((
+        new_component(
+            Vec2::new(0., -BOARD_HEIGHT / 2. - WALL_THICKNESS / 2.),
+            Vec2::new(BOARD_WIDTH + WALL_THICKNESS * 2., WALL_THICKNESS),
+            Color::CYAN,
+        ),
         (Wall, Collider),
-    );
+    ));
     // TOP
-    spawn_component(
-        commands,
-        Vec2::new(0., BOARD_HEIGHT / 2. + WALL_THICKNESS / 2.),
-        Vec2::new(BOARD_WIDTH + WALL_THICKNESS * 2., WALL_THICKNESS),
-        Color::CYAN,
+    commands.spawn((
+        new_component(
+            Vec2::new(0., BOARD_HEIGHT / 2. + WALL_THICKNESS / 2.),
+            Vec2::new(BOARD_WIDTH + WALL_THICKNESS * 2., WALL_THICKNESS),
+            Color::CYAN,
+        ),
         Wall,
-    );
+    ));
     // LEFT
-    spawn_component(
-        commands,
-        Vec2::new(-BOARD_WIDTH / 2. - WALL_THICKNESS / 2., 0.),
-        Vec2::new(WALL_THICKNESS, BOARD_HEIGHT + WALL_THICKNESS * 2.),
-        Color::CYAN,
+    commands.spawn((
+        new_component(
+            Vec2::new(-BOARD_WIDTH / 2. - WALL_THICKNESS / 2., 0.),
+            Vec2::new(WALL_THICKNESS, BOARD_HEIGHT + WALL_THICKNESS * 2.),
+            Color::CYAN,
+        ),
         (Wall, Collider),
-    );
+    ));
     // RIGHT
-    spawn_component(
-        commands,
-        Vec2::new(BOARD_WIDTH / 2. + WALL_THICKNESS / 2., 0.),
-        Vec2::new(WALL_THICKNESS, BOARD_HEIGHT + WALL_THICKNESS * 2.),
-        Color::CYAN,
+    commands.spawn((
+        new_component(
+            Vec2::new(BOARD_WIDTH / 2. + WALL_THICKNESS / 2., 0.),
+            Vec2::new(WALL_THICKNESS, BOARD_HEIGHT + WALL_THICKNESS * 2.),
+            Color::CYAN,
+        ),
         (Wall, Collider),
-    );
-}
-
-fn spawn_component<T: Bundle>(
-    commands: &mut Commands,
-    translation: Vec2,
-    scale: Vec2,
-    color: Color,
-    component: T,
-) {
-    commands.spawn((new_component(translation, scale, color), component));
+    ));
 }
 
 fn new_component(translation: Vec2, scale: Vec2, color: Color) -> SpriteBundle {
