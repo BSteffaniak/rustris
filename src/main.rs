@@ -1,4 +1,8 @@
+<<<<<<< Updated upstream
 use bevy::sprite::collide_aabb::collide;
+=======
+use bevy::sprite::collide_aabb::{collide, Collision};
+>>>>>>> Stashed changes
 use bevy::{prelude::*, time::FixedTimestep};
 
 const TIME_STEP: f32 = 1.0 / 60.;
@@ -52,9 +56,12 @@ struct Velocity(Vec2);
 struct Tetromino {
     active: bool,
 }
+<<<<<<< Updated upstream
 
 #[derive(Component)]
 struct Square;
+=======
+>>>>>>> Stashed changes
 
 #[derive(Component)]
 struct Wall;
@@ -75,6 +82,7 @@ fn setup(mut commands: Commands) {
 }
 
 fn spawn_tetromino(commands: &mut Commands) {
+<<<<<<< Updated upstream
     let squares: [Entity; 4] = [
         commands
             .spawn((
@@ -130,8 +138,38 @@ fn spawn_board(commands: &mut Commands) {
             Vec2::new(0., BOARD_HEIGHT / 2. + WALL_THICKNESS / 2.),
             Vec2::new(BOARD_WIDTH + WALL_THICKNESS * 2., WALL_THICKNESS),
             Color::CYAN,
+=======
+    spawn_component(
+        commands,
+        INITIAL_TETROMINO_POSITION,
+        TETROMINO_SIZE,
+        TETROMINO_COLOR,
+        (
+            Tetromino { active: true },
+            Velocity(INITIAL_TETROMINO_DIRECTION.normalize() * TETROMINO_BLOCK_SIZE),
+            Collider,
+>>>>>>> Stashed changes
         ),
+    );
+}
+
+fn spawn_board(commands: &mut Commands) {
+    // BOTTOM
+    spawn_component(
+        commands,
+        Vec2::new(0., -BOARD_HEIGHT / 2. - WALL_THICKNESS / 2.),
+        Vec2::new(BOARD_WIDTH + WALL_THICKNESS * 2., WALL_THICKNESS),
+        Color::CYAN,
+        (Wall, Collider),
+    );
+    // TOP
+    spawn_component(
+        commands,
+        Vec2::new(0., BOARD_HEIGHT / 2. + WALL_THICKNESS / 2.),
+        Vec2::new(BOARD_WIDTH + WALL_THICKNESS * 2., WALL_THICKNESS),
+        Color::CYAN,
         Wall,
+<<<<<<< Updated upstream
     ));
     // LEFT
     commands.spawn((
@@ -151,6 +189,35 @@ fn spawn_board(commands: &mut Commands) {
         ),
         (Wall, Collider),
     ));
+=======
+    );
+    // LEFT
+    spawn_component(
+        commands,
+        Vec2::new(-BOARD_WIDTH / 2. - WALL_THICKNESS / 2., 0.),
+        Vec2::new(WALL_THICKNESS, BOARD_HEIGHT + WALL_THICKNESS * 2.),
+        Color::CYAN,
+        (Wall, Collider),
+    );
+    // RIGHT
+    spawn_component(
+        commands,
+        Vec2::new(BOARD_WIDTH / 2. + WALL_THICKNESS / 2., 0.),
+        Vec2::new(WALL_THICKNESS, BOARD_HEIGHT + WALL_THICKNESS * 2.),
+        Color::CYAN,
+        (Wall, Collider),
+    );
+}
+
+fn spawn_component<T: Bundle>(
+    commands: &mut Commands,
+    translation: Vec2,
+    scale: Vec2,
+    color: Color,
+    component: T,
+) {
+    commands.spawn((new_component(translation, scale, color), component));
+>>>>>>> Stashed changes
 }
 
 fn new_component(translation: Vec2, scale: Vec2, color: Color) -> SpriteBundle {
@@ -234,6 +301,7 @@ fn move_tetromino(
         }
     });
 }
+<<<<<<< Updated upstream
 
 fn check_for_collisions(
     mut commands: Commands,
@@ -250,11 +318,32 @@ fn check_for_collisions(
                 return;
             }
 
+=======
+
+fn check_for_collisions(
+    mut commands: Commands,
+    mut tetromino_query: Query<
+        (Entity, &mut Velocity, &Transform, &mut Tetromino),
+        With<Tetromino>,
+    >,
+    collider_query: Query<(Entity, &Transform), With<Collider>>,
+    mut collision_events: EventWriter<CollisionEvent>,
+) {
+    tetromino_query.for_each_mut(
+        |(tetromino_entity, mut tetromino_velocity, tetromino_transform, mut tetromino)| {
+            if !tetromino.active {
+                return;
+            }
+
+            let tetromino_size = tetromino_transform.scale.truncate();
+
+>>>>>>> Stashed changes
             for (entity, transform) in &collider_query {
                 if entity == tetromino_entity {
                     continue; // Do not check collision with self
                 }
 
+<<<<<<< Updated upstream
                 let x_position = tetromino_transform
                     .with_translation(
                         tetromino_transform.translation + Vec3::new(tetromino_velocity.0.x, 0., 0.),
@@ -285,10 +374,49 @@ fn check_for_collisions(
                     tetromino.active = false;
                     tetromino_velocity.0.y = 0.;
                     spawn_tetromino(&mut commands);
+=======
+                let next_position = tetromino_transform
+                    .with_translation(
+                        tetromino_transform.translation + tetromino_velocity.0.extend(0.),
+                    )
+                    .translation;
+
+                let collision = collide(
+                    next_position,
+                    tetromino_size,
+                    transform.translation,
+                    transform.scale.truncate(),
+                );
+
+                if let Some(collision) = collision {
+                    // Sends a collision event so that other systems can react to the collision
+                    collision_events.send_default();
+
+                    let mut hit_bottom = false;
+                    let mut hit_side = false;
+
+                    match collision {
+                        Collision::Left => hit_side = true,
+                        Collision::Right => hit_side = true,
+                        Collision::Top => hit_bottom = true,
+                        Collision::Bottom => hit_bottom = true,
+                        Collision::Inside => hit_bottom = true,
+                    }
+
+                    if hit_bottom {
+                        tetromino.active = false;
+                        println!("hey");
+                    //                        spawn_tetromino(&mut commands);
+                    } else if hit_side {
+                        /* do not move to side */
+                        tetromino_velocity.0.x = 0.;
+                    }
+>>>>>>> Stashed changes
                 }
             }
         },
     );
+<<<<<<< Updated upstream
 }
 
 fn check_collision(
@@ -314,4 +442,6 @@ fn check_collision(
     } else {
         false
     }
+=======
+>>>>>>> Stashed changes
 }
